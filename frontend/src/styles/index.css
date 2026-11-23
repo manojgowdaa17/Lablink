@@ -1,0 +1,38 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  body {
+    @apply bg-navy text-cloud font-sans antialiased;
+  }
+  *:focus-visible {
+    @apply outline-2 outline-teal outline-offset-2;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-teal hover:bg-teal-600 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200 hover:scale-105 focus-visible:outline-2 focus-visible:outline-teal;
+  }
+  .btn-secondary {
+    @apply border border-teal text-teal hover:bg-teal hover:text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200;
+  }
+  .btn-amber {
+    @apply bg-amber hover:bg-amber-600 text-navy font-semibold px-6 py-3 rounded-xl transition-all duration-200 hover:scale-105;
+  }
+  .card {
+    @apply bg-navy-800 border border-navy-700 rounded-2xl p-6 hover:border-teal/40 transition-all duration-300;
+  }
+  .gradient-text {
+    @apply bg-gradient-to-r from-teal-300 to-teal bg-clip-text text-transparent;
+  }
+  .section-title {
+    @apply text-3xl md:text-4xl font-bold text-cloud mb-4;
+  }
+  .section-subtitle {
+    @apply text-lg text-cloud/60 max-w-2xl mx-auto;
+  }
+}
