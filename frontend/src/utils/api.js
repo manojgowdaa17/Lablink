@@ -1,10 +1,11 @@
 import axios from 'axios'
 
+// In development: baseURL is '' so Vite proxy handles /api/... → localhost:5000
+// In production:  VITE_API_URL is injected by Render (e.g. https://lablink-backend.onrender.com)
+const baseURL = typeof __API_BASE__ !== 'undefined' ? __API_BASE__ : ''
+
 const api = axios.create({
-  // Empty baseURL so all requests go as relative URLs (/api/...)
-  // and are handled by Vite's proxy → http://localhost:5000
-  // This avoids CORS issues and ensures cookies work correctly.
-  baseURL: '',
+  baseURL,
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 })

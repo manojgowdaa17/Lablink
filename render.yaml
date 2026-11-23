@@ -1,0 +1,41 @@
+services:
+  # ── Backend (Flask API) ──────────────────────────────────────
+  - type: web
+    name: lablink-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn "app:create_app()" --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    envVars:
+      - key: MONGO_URI
+        sync: false          # set manually in Render dashboard
+      - key: SECRET_KEY
+        generateValue: true  # Render auto-generates a secure value
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: ADMIN_SETUP_SECRET
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false          # optional — leave blank to disable AI
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_DEBUG
+        value: "false"
+      - key: CORS_ORIGINS
+        sync: false          # set to your frontend Render URL after deploy
+    healthCheckPath: /api/health
+
+  # ── Frontend (React / Vite static site) ─────────────────────
+  - type: web
+    name: lablink-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false          # set to your backend Render URL after deploy
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
