@@ -14,6 +14,8 @@ import NotificationsPage from './pages/student/NotificationsPage'
 import FacultyDashboard from './pages/faculty/FacultyDashboard'
 import ApprovalsPage from './pages/faculty/ApprovalsPage'
 import FacultyBookingsPage from './pages/faculty/FacultyBookingsPage'
+import FacultyEquipmentPage from './pages/faculty/FacultyEquipmentPage'
+import FacultyReportsPage from './pages/faculty/FacultyReportsPage'
 import AdminLoginPage from './pages/admin/AdminLoginPage'
 import AdminDashboard from './pages/admin/AdminDashboard'
 
@@ -52,6 +54,8 @@ export default function App() {
         <Route path="/faculty/dashboard" element={<ProtectedRoute role="faculty"><FacultyDashboard /></ProtectedRoute>} />
         <Route path="/faculty/dashboard/approvals" element={<ProtectedRoute role="faculty"><ApprovalsPage /></ProtectedRoute>} />
         <Route path="/faculty/dashboard/bookings" element={<ProtectedRoute role="faculty"><FacultyBookingsPage /></ProtectedRoute>} />
+        <Route path="/faculty/dashboard/equipment" element={<ProtectedRoute role="faculty"><FacultyEquipmentPage /></ProtectedRoute>} />
+        <Route path="/faculty/dashboard/reports" element={<ProtectedRoute role="faculty"><FacultyReportsPage /></ProtectedRoute>} />
 
         {/* Admin routes */}
         <Route path="/admin/dashboard" element={<AdminDashboard />} />

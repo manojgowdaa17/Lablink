@@ -13,10 +13,15 @@ api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
-      // Redirect to login if session expired (but not on login page itself)
       const path = window.location.pathname
+      // Don't redirect if already on a login page
       if (!path.includes('/login')) {
-        window.location.href = '/login'
+        // Faculty paths redirect to faculty login; everyone else to student login
+        if (path.startsWith('/faculty/')) {
+          window.location.href = '/faculty/login'
+        } else {
+          window.location.href = '/login'
+        }
       }
     }
     return Promise.reject(err)

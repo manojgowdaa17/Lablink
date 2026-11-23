@@ -234,17 +234,23 @@ def suggest_alternative(project_id):
 
     return jsonify({"message": "Suggestion sent to student."})
 
-# GET /api/faculty/bookings — faculty sees all confirmed bookings
+# GET /api/faculty/bookings — faculty sees all confirmed/pending bookings
 @faculty_bp.route("/bookings", methods=["GET"])
 @require_auth(roles=["faculty"])
 def faculty_bookings():
     page     = max(1, int(request.args.get("page", 1)))
     per_page = min(20, int(request.args.get("per_page", 10)))
     skip     = (page - 1) * per_page
+    status_filter = request.args.get("status")
 
-    total = mongo.db.bookings.count_documents({"status": {"$in": ["confirmed", "pending_approval"]}})
+    if status_filter:
+        query = {"status": status_filter}
+    else:
+        query = {"status": {"$in": ["confirmed", "pending_approval"]}}
+
+    total = mongo.db.bookings.count_documents(query)
     items = list(
-        mongo.db.bookings.find({"status": {"$in": ["confirmed", "pending_approval"]}})
+        mongo.db.bookings.find(query)
         .sort("start_time", 1).skip(skip).limit(per_page)
     )
     return jsonify({
@@ -253,3 +259,81 @@ def faculty_bookings():
         "page": page,
         "per_page": per_page,
     })
+
+# PATCH /api/faculty/bookings/<id>/approve — faculty approves a pending_approval booking
+@faculty_bp.route("/bookings/<booking_id>/approve", methods=["PATCH"])
+@require_auth(roles=["faculty"])
+def approve_booking(booking_id):
+    try:
+        oid = ObjectId(booking_id)
+    except Exception:
+        return jsonify({"error": "Invalid booking ID."}), 400
+    b = mongo.db.bookings.find_one({"_id": oid})
+    if not b:
+        return jsonify({"error": "Booking not found."}), 404
+    if b["status"] != "pending_approval":
+        return jsonify({"error": "Only pending_approval bookings can be approved."}), 400
+
+    now = datetime.now(timezone.utc)
+    mongo.db.bookings.update_one(
+        {"_id": oid},
+        {"$set": {
+            "status": "confirmed",
+            "approved_by": g.user["_id"],
+            "approved_at": now,
+            "updated_at": now,
+        }}
+    )
+    # Notify the student
+    mongo.db.notifications.insert_one({
+        "user_id":   b["student_id"],
+        "type":      "approval",
+        "title":     "Booking Approved",
+        "message":   f'Your booking for "{b.get("equipment_name", "equipment")}" has been approved.',
+        "read":      False,
+        "created_at": now,
+    })
+    mongo.db.audit_logs.insert_one({
+        "action":     "booking_approved",
+        "actor_id":   g.user["_id"],
+        "actor_role": "faculty",
+        "target_id":  oid,
+        "target_type": "booking",
+        "created_at": now,
+    })
+    return jsonify({"message": "Booking approved."})
+
+# PATCH /api/faculty/bookings/<id>/reject — faculty rejects a pending_approval booking
+@faculty_bp.route("/bookings/<booking_id>/reject", methods=["PATCH"])
+@require_auth(roles=["faculty"])
+def reject_booking(booking_id):
+    try:
+        oid = ObjectId(booking_id)
+    except Exception:
+        return jsonify({"error": "Invalid booking ID."}), 400
+    b = mongo.db.bookings.find_one({"_id": oid})
+    if not b:
+        return jsonify({"error": "Booking not found."}), 404
+    if b["status"] != "pending_approval":
+        return jsonify({"error": "Only pending_approval bookings can be rejected."}), 400
+
+    data   = request.get_json(silent=True) or {}
+    reason = str(data.get("reason", "Rejected by faculty.")).strip()[:300]
+    now = datetime.now(timezone.utc)
+    mongo.db.bookings.update_one(
+        {"_id": oid},
+        {"$set": {
+            "status": "cancelled",
+            "cancellation_reason": reason,
+            "updated_at": now,
+        }}
+    )
+    mongo.db.notifications.insert_one({
+        "user_id":   b["student_id"],
+        "type":      "rejection",
+        "title":     "Booking Rejected",
+        "message":   f'Your booking for "{b.get("equipment_name", "equipment")}" was rejected. Reason: {reason}',
+        "read":      False,
+        "created_at": now,
+    })
+    return jsonify({"message": "Booking rejected."})
