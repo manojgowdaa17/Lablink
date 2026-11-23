@@ -14,13 +14,25 @@ export default function EquipmentDetailModal({ item, onClose }) {
       setBookingStatus('error')
       return
     }
+    const startDt = new Date(startTime)
+    const endDt   = new Date(endTime)
+    if (isNaN(startDt) || isNaN(endDt)) {
+      setBookingMsg('Invalid date/time selected.')
+      setBookingStatus('error')
+      return
+    }
+    if (endDt <= startDt) {
+      setBookingMsg('End time must be after start time.')
+      setBookingStatus('error')
+      return
+    }
     setBookingStatus('loading')
     setBookingMsg('')
     try {
       await api.post('/api/bookings/', {
         equipment_id: item.id,
-        start_time: startTime,
-        end_time: endTime,
+        start_time: startDt.toISOString(),   // always sends UTC "Z" suffix
+        end_time:   endDt.toISOString(),
       })
       setBookingStatus('success')
       setBookingMsg('Booking created! Check "My Bookings" for status.')
@@ -138,11 +150,13 @@ export default function EquipmentDetailModal({ item, onClose }) {
                     <div>
                       <label className="text-xs font-medium text-cloud/60 block mb-1.5">Start Time</label>
                       <input type="datetime-local" value={startTime} onChange={e => setStartTime(e.target.value)}
+                        min={new Date().toISOString().slice(0, 16)}
                         className="w-full bg-navy-800 border border-navy-600 rounded-xl px-3 py-2 text-sm text-cloud focus:outline-none focus:border-teal transition-colors" />
                     </div>
                     <div>
                       <label className="text-xs font-medium text-cloud/60 block mb-1.5">End Time</label>
                       <input type="datetime-local" value={endTime} onChange={e => setEndTime(e.target.value)}
+                        min={startTime || new Date().toISOString().slice(0, 16)}
                         className="w-full bg-navy-800 border border-navy-600 rounded-xl px-3 py-2 text-sm text-cloud focus:outline-none focus:border-teal transition-colors" />
                     </div>
                   </div>

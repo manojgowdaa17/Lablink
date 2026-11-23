@@ -50,6 +50,11 @@ def create_booking():
         eq_oid   = ObjectId(equipment_id)
         start_dt = datetime.fromisoformat(start_str)
         end_dt   = datetime.fromisoformat(end_str)
+        # Treat naive datetimes as UTC (browser datetime-local sends no timezone)
+        if start_dt.tzinfo is None:
+            start_dt = start_dt.replace(tzinfo=timezone.utc)
+        if end_dt.tzinfo is None:
+            end_dt = end_dt.replace(tzinfo=timezone.utc)
     except Exception:
         return jsonify({"error": "Invalid equipment ID or date format (use ISO 8601)."}), 400
 
